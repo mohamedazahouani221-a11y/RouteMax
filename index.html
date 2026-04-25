@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RouteMax">
+<meta name="theme-color" content="#000000">
+<title>RouteMax — Livreur Belgique</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#007AFF;--green:#34C759;--orange:#FF9500;
+  --red:#FF3B30;--purple:#AF52DE;--cyan:#05C8F0;
+  --bg:#000;--bg3:#1C1C1E;--bg4:#2C2C2E;--bg5:#3A3A3C;
+  --t2:rgba(255,255,255,0.6);--t3:rgba(255,255,255,0.3);
+  --sep:rgba(255,255,255,0.09)
+}
+html,body{height:100%;background:#000;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;color:#fff;overflow:hidden}
+#app{width:100%;max-width:430px;height:100vh;margin:0 auto;background:#000;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+/* Status */
+#statusbar{height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 8px;flex-shrink:0;background:#000;position:relative}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:110px;height:30px;background:#111;border-radius:18px}
+/* Toast */
+#toast{position:absolute;top:58px;left:12px;right:12px;z-index:999;background:rgba(28,28,30,0.97);border:1px solid var(--sep);border-radius:18px;padding:13px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,0.7);transform:translateY(-120px);opacity:0;transition:all .4s cubic-bezier(0.32,0.72,0,1);pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+/* Screens */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+/* Tabs */
+#tabbar{height:78px;background:rgba(14,14,16,0.97);border-top:1px solid var(--sep);display:flex;padding-bottom:14px;flex-shrink:0}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;cursor:pointer;padding-top:8px;-webkit-tap-highlight-color:transparent}
+.tab-btn span.icon{font-size:22px}
+.tab-btn span.label{font-size:10px;font-weight:500;color:var(--t3)}
+.tab-btn.active span.label{color:var(--blue)}
+.tab-dot{width:4px;height:4px;border-radius:50%;background:var(--blue);display:none}
+.tab-btn.active .tab-dot{display:block}
+/* Cards */
+.card{background:var(--bg3);border-radius:16px;border:1px solid var(--sep);overflow:hidden}
+/* Buttons */
+.btn-main{width:100%;height:52px;border-radius:14px;border:none;cursor:pointer;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;-webkit-tap-highlight-color:transparent}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-ghost{background:var(--bg3);color:var(--t2);border:1px solid var(--sep)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 6px 20px rgba(52,199,89,0.35)}
+.waze-btn{background:#05C8F0;color:#000;font-weight:800;border-radius:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;-webkit-tap-highlight-color:transparent}
+.waze-btn.full{width:100%;height:56px;font-size:16px;border-radius:16px;box-shadow:0 5px 18px rgba(5,200,240,0.4)}
+.waze-btn.sm{height:38px;padding:0 13px;font-size:13px;border-radius:11px;box-shadow:0 4px 12px rgba(5,200,240,0.35)}
+/* Stop row */
+.stop-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--sep);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stop-row:last-child{border-bottom:none}
+.stop-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+/* Hero */
+.hero{margin:0 16px 14px;background:linear-gradient(135deg,#003FA0,#007AFF 55%,#4DAAFF);border-radius:24px;padding:22px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07)}
+/* Info rows */
+.info-row{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--sep)}
+.info-row:last-child{border-bottom:none}
+.info-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+/* Pill */
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill-red{background:rgba(255,59,48,0.15);color:var(--red)}
+.pill-green{background:rgba(52,199,89,0.15);color:var(--green)}
+.pill-blue{background:rgba(0,122,255,0.15);color:var(--blue)}
+/* Modal */
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;align-items:flex-end}
+.modal-sheet{width:100%;background:var(--bg3);border-radius:24px 24px 0 0;padding:0 0 40px;animation:slideUp .35s cubic-bezier(0.32,0.72,0,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:36px;height:4px;background:var(--bg5);border-radius:2px;margin:14px auto 20px}
+/* Timeline */
+.tl-dot{border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-line{flex:1;width:2px;background:var(--sep);margin-top:4px;min-height:20px}
+/* Progress */
+.progress-bar{width:100%;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s}
+/* Inputs */
+.time-sel{background:var(--bg4);border:1px solid var(--sep);border-radius:10px;color:#fff;font-size:20px;font-weight:600;padding:7px 10px;text-align:center;width:62px;cursor:pointer;-webkit-appearance:none}
+/* GPS bar */
+.gps-bar{margin:0 16px 14px;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+/* Animations */
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,0.4)}50%{box-shadow:0 0 0 8px rgba(255,59,48,0)}}
+@keyframes scanLine{0%{top:0}100%{top:calc(100% - 2px)}}
+/* API key screen */
+.api-screen{position:absolute;inset:0;background:#000;z-index:800;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px}
+.api-input{width:100%;background:var(--bg3);border:1px solid var(--sep);border-radius:12px;color:#fff;font-size:13px;padding:14px;margin:16px 0;font-family:monospace}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <span id="clock" style="font-size:15px;font-weight:600"></span>
+    <div class="island"></div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+      <span id="gps-indicator" style="font-size:10px;font-weight:600;color:var(--green);display:none">GPS✓</span>
+      <span>📶🔋</span>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast">
+    <span id="toast-icon" style="font-size:24px"></span>
+    <div>
+      <div id="toast-title" style="font-size:14px;font-weight:600"></div>
+      <div id="toast-sub" style="font-size:12px;color:var(--t2);margin-top:2px"></div>
+    </div>
+  </div>
+
+  <!-- API KEY SCREEN -->
+  <div id="api-screen" class="api-screen" style="display:none">
+    <div style="font-size:48px;margin-bottom:16px">🔑</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:8px;text-align:center">Clé API Anthropic</div>
+    <div style="font-size:13px;color:var(--t2);text-align:center;line-height:1.6;margin-bottom:4px">
+      Nécessaire pour le scan OCR des feuilles de route.<br>
+      Obtenez votre clé gratuite sur <strong>console.anthropic.com</strong><br>
+      (5$ de crédit offert = des centaines de scans)
+    </div>
+    <textarea id="api-key-input" class="api-input" rows="2" placeholder="sk-ant-api03-..."></textarea>
+    <button onclick="saveApiKey()" class="btn-main btn-blue" style="margin-bottom:10px">✅ Enregistrer la clé</button>
+    <button onclick="skipApiKey()" class="btn-main btn-ghost">Continuer sans OCR (saisie manuelle)</button>
+    <div style="font-size:11px;color:var(--t2);margin-top:12px;text-align:center">🔒 Clé stockée localement sur votre appareil</div>
+  </div>
+
+  <!-- SCREEN: HOME -->
+  <div id="screen-home" class="screen">
+    <div class="scroll">
+      <div style="padding:4px 16px 12px">
+        <div style="font-size:13px;color:var(--t2)">🇧🇪 Bonjour, Thomas</div>
+        <div style="font-size:32px;font-weight:700;letter-spacing:-0.5px;margin-top:2px">Mes Livraisons</div>
+      </div>
+      <div id="gps-bar" class="gps-bar" style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.2)">
+        <span style="font-size:18px">⏳</span>
+        <div style="flex:1">
+          <div id="gps-text" style="font-size:13px;font-weight:600;color:var(--orange)">Localisation en cours...</div>
+          <div id="gps-coords" style="font-size:10px;color:var(--t2);margin-top:1px"></div>
+        </div>
+      </div>
+      <div id="home-empty" style="margin:0 16px;text-align:center;padding:30px 16px">
+        <div style="font-size:56px;margin-bottom:14px">📋</div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:8px">Aucune feuille scannée</div>
+        <div style="font-size:14px;color:var(--t2);margin-bottom:24px;line-height:1.6">
+          Scannez votre feuille de route · Claude extrait les adresses · OSRM optimise la boucle belge
+        </div>
+        <button onclick="switchTab('scan')" class="btn-main btn-blue">📄 Scanner une feuille de route</button>
+        <button onclick="loadDemo()" class="btn-main btn-ghost">🇧🇪 Démo Bruxelles (6 arrêts)</button>
+      </div>
+      <div id="home-content" style="display:none">
+        <!-- Hero -->
+        <div class="hero">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:12px;opacity:.75">Tournée · Belgique 🇧🇪</div>
+              <div id="hero-date" style="font-size:19px;font-weight:700;margin-top:3px"></div>
+            </div>
+            <span style="font-size:28px">🚚</span>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:16px">
+            <div><div id="hero-stops" style="font-size:22px;font-weight:700">0</div><div style="font-size:11px;opacity:.7;margin-top:2px">Arrêts</div></div>
+            <div><div id="hero-km" style="font-size:22px;font-weight:700">—</div><div style="font-size:11px;opacity:.7;margin-top:2px">Distance</div></div>
+            <div><div id="hero-time" style="font-size:22px;font-weight:700">—</div><div style="font-size:11px;opacity:.7;margin-top:2px">Total</div></div>
+          </div>
+          <div style="margin-top:14px;background:rgba(255,255,255,0.2);border-radius:10px;height:5px;overflow:hidden">
+            <div id="hero-progress" style="width:0%;height:100%;background:#fff;border-radius:10px;transition:width .5s"></div>
+          </div>
+          <div id="hero-done" style="font-size:11px;opacity:.7;margin-top:5px">0/0 livrés</div>
+        </div>
+        <!-- Next stop -->
+        <div id="next-stop-card" style="margin:0 16px 14px;display:none">
+          <div style="font-size:13px;color:var(--t2);margin-bottom:6px;font-weight:500">▶ Prochain arrêt</div>
+          <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div id="next-icon" style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📦</div>
+            <div style="flex:1;min-width:0">
+              <div id="next-name" style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              <div id="next-addr" style="font-size:11px;color:var(--t2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              <div id="next-info" style="font-size:11px;margin-top:2px"></div>
+            </div>
+            <button id="next-waze-btn" class="waze-btn sm" onclick="wazeNext()">😊 Go</button>
+          </div>
+        </div>
+        <!-- Time breakdown -->
+        <div id="time-breakdown" style="margin:0 16px 14px;display:none">
+          <div class="card" style="padding:14px">
+            <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:10px">⏱ Temps estimé complet</div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;background:var(--bg4);border-radius:10px;padding:10px 8px;text-align:center">
+                <div style="font-size:16px">🚗</div>
+                <div id="tb-drive" style="font-size:13px;font-weight:700;margin-top:4px">—</div>
+                <div style="font-size:9px;color:var(--t2);margin-top:2px">Trajet</div>
+              </div>
+              <div style="flex:1;background:var(--bg4);border-radius:10px;padding:10px 8px;text-align:center">
+                <div style="font-size:16px">📦</div>
+                <div id="tb-standard" style="font-size:13px;font-weight:700;margin-top:4px">—</div>
+                <div style="font-size:9px;color:var(--t2);margin-top:2px">Standards</div>
+              </div>
+              <div style="flex:1;background:var(--bg4);border-radius:10px;padding:10px 8px;text-align:center">
+                <div style="font-size:16px">🏥</div>
+                <div id="tb-long" style="font-size:13px;font-weight:700;margin-top:4px">—</div>
+                <div style="font-size:9px;color:var(--t2);margin-top:2px">Longs</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Urgences -->
+        <div id="urgents-section" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:8px">
+            <div style="font-size:16px;font-weight:600;color:var(--red)">⚡ Urgences</div>
+            <span id="urgent-count" class="pill pill-red"></span>
+          </div>
+          <div id="urgents-list" class="card" style="margin:0 16px 14px;overflow:hidden"></div>
+        </div>
+        <!-- All stops -->
+        <div style="padding:0 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:16px;font-weight:600">Tous les arrêts</div>
+          <button onclick="switchTab('scan')" style="font-size:13px;color:var(--blue);background:none;border:none;cursor:pointer">+ Scanner</button>
+        </div>
+        <div id="stops-list" class="card" style="margin:0 16px 24px;overflow:hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: SCAN -->
+  <div id="screen-scan" class="screen">
+    <div class="scroll">
+      <div style="padding:4px 16px 14px">
+        <div style="font-size:32px;font-weight:700;letter-spacing:-0.3px">Scanner</div>
+        <div style="font-size:14px;color:var(--t2);margin-top:3px">OCR Claude · Nominatim · OSRM Belgique</div>
+      </div>
+      <!-- API key reminder -->
+      <div id="api-reminder" style="margin:0 16px 12px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.2);border-radius:12px;padding:10px 14px;display:none">
+        <div style="font-size:13px;font-weight:600;color:var(--orange)">🔑 Clé API requise pour l'OCR</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:3px">Sans clé, utilisez la saisie manuelle ou la démo</div>
+        <button onclick="showApiScreen()" style="margin-top:8px;font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600">Configurer ma clé →</button>
+      </div>
+      <!-- Upload zone -->
+      <input type="file" id="file-input" accept="image/*,application/pdf" style="display:none" onchange="handleFile(this.files[0])">
+      <div id="upload-zone" onclick="triggerUpload()" style="margin:0 16px 16px;border-radius:20px;border:2px dashed var(--sep);background:var(--bg3);cursor:pointer;overflow:hidden">
+        <div id="zone-idle" style="height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+          <div style="font-size:50px">📄</div>
+          <div style="font-size:16px;font-weight:600">Choisir photo ou PDF</div>
+          <div style="font-size:13px;color:var(--t2)">Feuille de route, bon de livraison...</div>
+        </div>
+        <div id="zone-processing" style="height:190px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 30px">
+          <div id="proc-icon" style="font-size:42px">📤</div>
+          <div class="progress-bar"><div id="proc-fill" class="progress-fill" style="width:0%"></div></div>
+          <div id="proc-msg" style="font-size:14px;color:var(--t2);text-align:center"></div>
+        </div>
+        <div id="zone-done" style="display:none;padding:14px 0 6px">
+          <div style="padding:0 16px 10px;display:flex;align-items:center;justify-content:space-between">
+            <div id="done-count" style="font-size:15px;font-weight:600"></div>
+            <span class="pill pill-green">Claude IA</span>
+          </div>
+          <div id="done-preview"></div>
+        </div>
+        <div id="zone-error" style="height:190px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 24px">
+          <div style="font-size:42px">⚠️</div>
+          <div id="error-msg" style="font-size:13px;color:var(--red);text-align:center"></div>
+        </div>
+      </div>
+      <!-- Pipeline -->
+      <div class="card" style="margin:0 16px 16px;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:12px">Pipeline temps réel</div>
+        <div id="pipe-ocr" class="pipe-step" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--sep);opacity:0.38">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:15px">🤖</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">Claude Sonnet</div><div style="font-size:11px;color:var(--t2)">OCR · Extraction adresses</div></div>
+          <span class="pipe-check" style="color:var(--green);display:none">✓</span>
+        </div>
+        <div id="pipe-geo" class="pipe-step" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--sep);opacity:0.38">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:15px">📍</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">Nominatim OSM</div><div style="font-size:11px;color:var(--t2)">Géocodage · Base Belgique</div></div>
+          <span class="pipe-check" style="color:var(--green);display:none">✓</span>
+        </div>
+        <div id="pipe-osrm" class="pipe-step" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--sep);opacity:0.38">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:15px">🔁</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">OSRM</div><div style="font-size:11px;color:var(--t2)">Optimisation boucle · Routes BE</div></div>
+          <span class="pipe-check" style="color:var(--green);display:none">✓</span>
+        </div>
+        <div id="pipe-time" class="pipe-step" style="display:flex;align-items:center;gap:12px;padding:8px 0;opacity:0.38">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:15px">⏱</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">Temps sur place</div><div style="font-size:11px;color:var(--t2)">Auto-calculé par type d'arrêt</div></div>
+          <span class="pipe-check" style="color:var(--green);display:none">✓</span>
+        </div>
+      </div>
+      <div style="padding:0 16px 32px;display:flex;flex-direction:column;gap:10px">
+        <button id="btn-voir-trajet" onclick="switchTab('route')" class="btn-main btn-blue" style="display:none">🗺️ Voir le trajet optimisé</button>
+        <button onclick="resetScan()" class="btn-main btn-ghost">📷 Nouveau scan</button>
+        <button onclick="loadDemo()" class="btn-main btn-ghost">🇧🇪 Démo Bruxelles</button>
+        <!-- Manual add -->
+        <div style="margin-top:4px;padding:14px;background:var(--bg3);border-radius:14px;border:1px solid var(--sep)">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">✏️ Ajouter manuellement</div>
+          <input id="manual-name" type="text" placeholder="Nom du client" style="width:100%;background:var(--bg4);border:1px solid var(--sep);border-radius:10px;color:#fff;font-size:14px;padding:10px;margin-bottom:8px">
+          <input id="manual-addr" type="text" placeholder="Adresse, code postal, ville" style="width:100%;background:var(--bg4);border:1px solid var(--sep);border-radius:10px;color:#fff;font-size:14px;padding:10px;margin-bottom:10px">
+          <button onclick="addManual()" class="btn-main btn-blue" style="margin-bottom:0;height:44px">Ajouter l'arrêt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: ROUTE -->
+  <div id="screen-route" class="screen">
+    <div class="scroll">
+      <div style="padding:4px 16px 12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:28px;font-weight:700;letter-spacing:-0.3px">Trajet</div>
+        <button id="route-waze-btn" class="waze-btn sm" onclick="wazeNext()">😊 Démarrer</button>
+      </div>
+      <!-- Stats -->
+      <div style="display:flex;gap:8px;margin:0 16px 12px">
+        <div class="card" style="flex:1;padding:11px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:14px">
+          <span style="font-size:15px">📍</span><div id="rt-stops" style="font-size:13px;font-weight:700">0</div><div style="font-size:10px;color:var(--t2)">Arrêts</div>
+        </div>
+        <div class="card" style="flex:1;padding:11px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:14px">
+          <span style="font-size:15px">🛣</span><div id="rt-km" style="font-size:13px;font-weight:700">—</div><div style="font-size:10px;color:var(--t2)">Distance</div>
+        </div>
+        <div class="card" style="flex:1;padding:11px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:14px">
+          <span style="font-size:15px">⏱</span><div id="rt-time" style="font-size:13px;font-weight:700">—</div><div style="font-size:10px;color:var(--t2)">Total</div>
+        </div>
+        <div class="card" style="flex:1;padding:11px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:14px">
+          <span style="font-size:15px">✅</span><div id="rt-done" style="font-size:13px;font-weight:700">0/0</div><div style="font-size:10px;color:var(--t2)">Livrés</div>
+        </div>
+      </div>
+      <div style="margin:0 16px 12px;background:rgba(0,122,255,0.07);border:1px solid rgba(0,122,255,0.18);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🔁</span>
+        <div><div style="font-size:13px;font-weight:600">Boucle OSRM · Routes réelles Belgique</div><div style="font-size:11px;color:var(--t2)">Retour automatique au point de départ</div></div>
+      </div>
+      <!-- Legend -->
+      <div style="margin:0 16px 12px;background:var(--bg3);border-radius:14px;border:1px solid var(--sep);padding:12px 14px">
+        <div style="font-size:12px;color:var(--t2);margin-bottom:8px;font-weight:500">Temps sur place par type</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="background:rgba(0,122,255,0.15);color:var(--blue);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600">📦 1m30</span>
+          <span style="background:rgba(52,199,89,0.15);color:var(--green);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600">💊 3min</span>
+          <span style="background:rgba(255,59,48,0.15);color:var(--red);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600">🏥 8m30</span>
+          <span style="background:rgba(175,82,222,0.15);color:var(--purple);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600">🏨 8m30</span>
+          <span style="background:rgba(255,149,0,0.15);color:var(--orange);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600">↩️ 5min</span>
+        </div>
+      </div>
+      <div style="padding:0 16px 8px;font-size:16px;font-weight:600">Itinéraire complet</div>
+      <div id="timeline" style="padding:4px 16px 0"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: DETAIL -->
+  <div id="screen-detail" class="screen">
+    <div style="padding:4px 16px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <button onclick="closeDetail()" style="width:36px;height:36px;border-radius:50%;background:var(--bg3);border:none;cursor:pointer;font-size:22px;color:#fff;display:flex;align-items:center;justify-content:center">‹</button>
+      <div id="detail-title" style="font-size:16px;font-weight:600">Arrêt</div>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll" style="padding-bottom:20px">
+      <!-- Waze main -->
+      <div style="margin:0 16px 14px">
+        <button id="detail-waze-btn" class="waze-btn full" onclick="wazeDetail()">😊 Naviguer</button>
+        <div id="detail-coords" style="text-align:center;font-size:11px;color:var(--t2);margin-top:5px"></div>
+      </div>
+      <!-- Type badge -->
+      <div id="detail-type-card" onclick="showTypePicker()" style="margin:0 16px 14px;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="detail-type-icon" style="font-size:24px">📦</span>
+          <div>
+            <div id="detail-type-name" style="font-size:14px;font-weight:600"></div>
+            <div id="detail-type-info" style="font-size:12px;color:var(--t2);margin-top:2px"></div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--t2)">Modifier ›</div>
+      </div>
+      <!-- Info -->
+      <div id="detail-info" class="card" style="margin:0 16px 14px"></div>
+      <!-- Créneau -->
+      <div style="padding:0 16px 8px">
+        <div style="font-size:15px;font-weight:600">⏰ Créneau urgent</div>
+      </div>
+      <div class="card" style="margin:0 16px 14px">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 14px 8px">
+          <span style="font-size:13px;color:var(--t2);flex:1">Heure limite</span>
+          <select id="time-h" class="time-sel">
+            <option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>
+            <option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
+            <option>16</option><option>17</option><option>18</option>
+          </select>
+          <span style="font-size:22px;color:var(--t2)">:</span>
+          <select id="time-m" class="time-sel">
+            <option>00</option><option>15</option><option>30</option><option>45</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px;padding:8px 14px 14px">
+          <button onclick="setUrgent()" style="flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,149,0,0.3);cursor:pointer;background:rgba(255,149,0,0.12);color:var(--orange);font-size:14px;font-weight:600">⚡ Urgent</button>
+          <button onclick="clearUrgent()" style="height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--sep);cursor:pointer;background:var(--bg4);color:var(--t2);font-size:14px;font-weight:600">Effacer</button>
+        </div>
+      </div>
+      <!-- Mark done -->
+      <div style="padding:0 16px 36px">
+        <button id="btn-mark-done" onclick="markDone()" class="btn-main btn-green" style="height:54px;font-size:17px;font-weight:700">✅ Marquer comme livré</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: STATS -->
+  <div id="screen-stats" class="screen">
+    <div class="scroll" style="padding:4px 16px">
+      <div style="font-size:32px;font-weight:700;letter-spacing:-0.3px;margin-bottom:16px">Statistiques</div>
+      <div id="stats-types" class="card" style="margin-bottom:14px;overflow:hidden"></div>
+      <div id="stats-general" class="card" style="margin-bottom:14px;overflow:hidden"></div>
+      <div style="background:rgba(5,200,240,0.07);border:1px solid rgba(5,200,240,0.18);border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:36px;margin-bottom:8px">🇧🇪</div>
+        <div style="font-size:16px;font-weight:700">Stack 100% réel</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:4px;line-height:1.6">Claude OCR · Nominatim · OSRM · GPS · Waze deep link</div>
+        <button onclick="showApiScreen()" style="margin-top:12px;font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer">🔑 Configurer clé API OCR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div id="tabbar">
+    <button class="tab-btn active" id="tab-home" onclick="switchTab('home')">
+      <span class="icon">🏠</span><span class="label">Accueil</span><div class="tab-dot"></div>
+    </button>
+    <button class="tab-btn" id="tab-scan" onclick="switchTab('scan')">
+      <span class="icon">📄</span><span class="label">Scanner</span><div class="tab-dot"></div>
+    </button>
+    <button class="tab-btn" id="tab-route" onclick="switchTab('route')">
+      <span class="icon">🗺️</span><span class="label">Trajet</span><div class="tab-dot"></div>
+    </button>
+    <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')">
+      <span class="icon">📊</span><span class="label">Stats</span><div class="tab-dot"></div>
+    </button>
+  </div>
+
+  <!-- NEXT STOP MODAL -->
+  <div id="next-modal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div style="text-align:center;padding:0 24px 20px">
+        <div style="font-size:52px;margin-bottom:8px">✅</div>
+        <div style="font-size:22px;font-weight:700">Livraison confirmée !</div>
+        <div style="font-size:14px;color:var(--t2);margin-top:4px">Prochain arrêt :</div>
+      </div>
+      <div id="next-modal-card" style="margin:0 16px 20px;background:var(--bg4);border-radius:18px;border:1px solid var(--sep);padding:18px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div id="nm-icon" style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📦</div>
+          <div style="flex:1;min-width:0">
+            <div id="nm-name" style="font-size:17px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            <div id="nm-addr" style="font-size:13px;color:var(--t2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:var(--bg3);border-radius:10px;padding:10px 12px;text-align:center">
+            <div style="font-size:11px;color:var(--t2)">Type</div>
+            <div id="nm-type" style="font-size:13px;font-weight:600;margin-top:3px"></div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border-radius:10px;padding:10px 12px;text-align:center">
+            <div style="font-size:11px;color:var(--t2)">Sur place</div>
+            <div id="nm-dur" style="font-size:13px;font-weight:600;margin-top:3px"></div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border-radius:10px;padding:10px 12px;text-align:center">
+            <div style="font-size:11px;color:var(--t2)">Arrivée</div>
+            <div id="nm-eta" style="font-size:13px;font-weight:600;margin-top:3px"></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
+        <button id="nm-waze-btn" class="waze-btn full" onclick="wazeNextModal()">😊 Naviguer maintenant</button>
+        <button onclick="closeNextModal()" style="width:100%;height:48px;border-radius:13px;border:1px solid var(--sep);cursor:pointer;background:var(--bg4);color:var(--t2);font-size:15px;font-weight:500">Voir la liste complète</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TYPE PICKER MODAL -->
+  <div id="type-modal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div style="padding:0 20px 16px">
+        <div style="font-size:20px;font-weight:700">Type d'arrêt</div>
+        <div style="font-size:13px;color:var(--t2);margin-top:3px">Définit le temps passé sur place</div>
+      </div>
+      <div id="type-list"></div>
+      <div style="padding:16px 16px 0">
+        <button onclick="closeTypePicker()" style="width:100%;height:48px;border-radius:13px;border:1px solid var(--sep);cursor:pointer;background:var(--bg4);color:var(--t2);font-size:15px">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const STOP_TYPES = [
+  {id:"standard", label:"Standard",           icon:"📦", min:1.5,  color:"#007AFF"},
+  {id:"hospital", label:"Hôpital / Clinique",  icon:"🏥", min:8.5,  color:"#FF3B30"},
+  {id:"hotel",    label:"Hôtel / Grand bâtiment", icon:"🏨", min:8.5,  color:"#AF52DE"},
+  {id:"school",   label:"École / Admin",       icon:"🏫", min:8.5,  color:"#FF9500"},
+  {id:"pharmacy", label:"Pharmacie",           icon:"💊", min:3,    color:"#34C759"},
+  {id:"return",   label:"Retour / Reprise",    icon:"↩️", min:5,    color:"rgba(255,255,255,0.6)"},
+];
+
+let stops = [];
+let routeStats = {km:null, min:null};
+let gps = null;
+let currentTab = "home";
+let prevTab = "home";
+let selStop = null;
+let apiKey = localStorage.getItem("routemax_api_key") || "";
+let toastTimer;
+let scanPhase = "idle";
+
+// ── INIT ─────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  initGPS();
+  document.getElementById("hero-date").textContent =
+    new Date().toLocaleDateString("fr-BE",{weekday:"long",day:"numeric",month:"long"});
+  if (!apiKey) showApiReminder();
+  buildTypeList();
+});
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById("clock").textContent =
+    `${n.getHours()}:${String(n.getMinutes()).padStart(2,"0")}`;
+}
+
+function initGPS() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(p => {
+    gps = {lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy)};
+    document.getElementById("gps-indicator").style.display = "inline";
+    const bar = document.getElementById("gps-bar");
+    bar.style.background = "rgba(52,199,89,0.08)";
+    bar.style.border = "1px solid rgba(52,199,89,0.2)";
+    document.getElementById("gps-text").style.color = "var(--green)";
+    document.getElementById("gps-text").textContent = `GPS actif · précision ${gps.acc}m`;
+    document.getElementById("gps-coords").textContent = `${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)}`;
+  }, e => {
+    document.getElementById("gps-text").textContent = e.message || "GPS indisponible";
+  }, {enableHighAccuracy:true, timeout:10000});
+}
+
+// ── API KEY ───────────────────────────────────────────────
+function showApiScreen() {
+  document.getElementById("api-screen").style.display = "flex";
+  document.getElementById("api-key-input").value = apiKey;
+}
+function saveApiKey() {
+  const k = document.getElementById("api-key-input").value.trim();
+  if (!k.startsWith("sk-")) { showToast("⚠️","Clé invalide","Elle doit commencer par sk-ant-..."); return; }
+  apiKey = k;
+  localStorage.setItem("routemax_api_key", k);
+  document.getElementById("api-screen").style.display = "none";
+  document.getElementById("api-reminder").style.display = "none";
+  showToast("✅","Clé API enregistrée","OCR Claude activé !");
+}
+function skipApiKey() {
+  document.getElementById("api-screen").style.display = "none";
+  showToast("ℹ️","Mode manuel","Utilisez la saisie manuelle ou la démo");
+}
+function showApiReminder() {
+  document.getElementById("api-reminder").style.display = "block";
+}
+
+// ── TABS ─────────────────────────────────────────────────
+function switchTab(tab) {
+  if (tab === "detail") return;
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("screen-"+tab).classList.add("active");
+  const tb = document.getElementById("tab-"+tab);
+  if (tb) tb.classList.add("active");
+  document.getElementById("tabbar").style.display = "flex";
+  currentTab = tab;
+  if (tab === "home") renderHome();
+  if (tab === "route") renderRoute();
+  if (tab === "stats") renderStats();
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(icon, title, sub) {
+  clearTimeout(toastTimer);
+  document.getElementById("toast-icon").textContent = icon;
+  document.getElementById("toast-title").textContent = title;
+  document.getElementById("toast-sub").textContent = sub;
+  document.getElementById("toast").classList.add("show");
+  toastTimer = setTimeout(() => document.getElementById("toast").classList.remove("show"), 3500);
+}
+
+// ── STOP TYPE HELPERS ─────────────────────────────────────
+function getStopType(s) {
+  if (s.stopTypeId) return STOP_TYPES.find(t=>t.id===s.stopTypeId) || STOP_TYPES[0];
+  const n = (s.name||"").toLowerCase();
+  if (/clinique|hôpital|hospital|polyclinic|chu|urgence/.test(n)) return STOP_TYPES[1];
+  if (/hôtel|hotel|amigo|mercure|ibis|hilton|novotel/.test(n))   return STOP_TYPES[2];
+  if (/école|school|lycée|collège|université|admin|commune/.test(n)) return STOP_TYPES[3];
+  if (/pharmacie|pharma/.test(n))                                  return STOP_TYPES[4];
+  if (s.type === "return")                                         return STOP_TYPES[5];
+  return STOP_TYPES[0];
+}
+
+function fmtMin(m) {
+  if (!m && m!==0) return "—";
+  const h = Math.floor(m/60), mn = Math.round(m%60);
+  return h > 0 ? `${h}h${String(mn).padStart(2,"0")}` : `${mn}min`;
+}
+function fmtMinShort(m) {
+  if (m < 1) return `${Math.round(m*60)}s`;
+  if (m >= 60) return `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,"0")}`;
+  return Number.isInteger(m) ? `${m}min` : `${m}min`;
+}
+
+function calcETAs(arr) {
+  let cur = 7*60;
+  return arr.map(s => {
+    const type = getStopType(s);
+    cur += (s.driveMins||8);
+    const eta = `${String(Math.floor(cur/60)).padStart(2,"0")}:${String(cur%60).padStart(2,"0")}`;
+    cur += type.min;
+    return {...s, eta};
+  });
+}
+
+// ── WAZE ─────────────────────────────────────────────────
+function openWaze(stop) {
+  if (!stop) return;
+  const url = stop.lat && stop.lon
+    ? `https://waze.com/ul?ll=${stop.lat},${stop.lon}&navigate=yes&zoom=17`
+    : `https://waze.com/ul?q=${encodeURIComponent((stop.addr||"")+" Belgique")}&navigate=yes`;
+  window.open(url, "_blank");
+}
+function wazeNext() { openWaze(stops.find(s=>s.status!=="done")||stops[0]); }
+function wazeDetail() { openWaze(selStop); }
+function wazeNextModal() {
+  const nm = document.getElementById("nm-name").dataset.stopId;
+  const s = stops.find(x=>x.id==nm);
+  openWaze(s);
+  closeNextModal();
+}
+
+// ── GEOCODE ───────────────────────────────────────────────
+async function geocode(addr) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr+" Belgique")}&format=json&limit=1&countrycodes=be`,
+      {headers:{"Accept-Language":"fr","User-Agent":"RouteMaxApp/1.0"}}
+    );
+    const d = await r.json();
+    if (d?.[0]) return {lat:parseFloat(d[0].lat), lon:parseFloat(d[0].lon)};
+  } catch {}
+  return null;
+}
+
+// ── OSRM ─────────────────────────────────────────────────
+async function osrmOptimize(waypoints) {
+  if (waypoints.length < 2) return {stops:waypoints, km:null, min:null};
+  try {
+    const coords = waypoints.map(w=>`${w.lon},${w.lat}`).join(";");
+    const r = await fetch(
+      `https://router.project-osrm.org/trip/v1/driving/${coords}?roundtrip=true&source=first&destination=last&steps=false`
+    );
+    const d = await r.json();
+    if (d.code==="Ok" && d.waypoints) {
+      const ordered = [...d.waypoints].sort((a,b)=>a.waypoint_index-b.waypoint_index).map(w=>waypoints[w.waypoint_index]);
+      return {
+        stops: ordered,
+        km: d.trips?.[0]?.distance ? (d.trips[0].distance/1000).toFixed(1) : null,
+        min: d.trips?.[0]?.duration ? Math.round(d.trips[0].duration/60) : null
+      };
+    }
+  } catch {}
+  return {stops:waypoints, km:null, min:null};
+}
+
+// ── CLAUDE OCR ────────────────────────────────────────────
+async function claudeOCR(b64, mime) {
+  if (!apiKey) throw new Error("Pas de clé API. Configurez votre clé dans Statistiques → Configurer clé API.");
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body: JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:1500,
+      messages:[{
+        role:"user",
+        content:[
+          {type:"image", source:{type:"base64", media_type:mime, data:b64}},
+          {type:"text", text:`Analyse cette feuille de route belge. Extrais TOUTES les adresses.
+Réponds UNIQUEMENT avec ce JSON (sans markdown):
+{"stops":[{"name":"Nom client","addr":"Adresse complète, code postal, ville","urgent":false,"time":null,"packages":"X colis"}]}
+- urgent=true si marqué urgent/express/prioritaire
+- time="HH:MM" si créneau visible, sinon null
+- Si aucune adresse: {"stops":[],"error":"Aucune adresse"}`}
+        ]
+      }]
+    })
+  });
+  const data = await r.json();
+  const txt = data.content?.[0]?.text || "{}";
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────
+function triggerUpload() {
+  if (["processing"].includes(scanPhase)) return;
+  document.getElementById("file-input").click();
+}
+
+function setScanPhase(phase, pct, msg) {
+  scanPhase = phase;
+  const idle = document.getElementById("zone-idle");
+  const proc = document.getElementById("zone-processing");
+  const done = document.getElementById("zone-done");
+  const err  = document.getElementById("zone-error");
+  idle.style.display = "none"; proc.style.display = "none";
+  done.style.display = "none"; err.style.display = "none";
+
+  if (phase==="idle")       { idle.style.display="flex"; document.getElementById("btn-voir-trajet").style.display="none"; }
+  if (phase==="processing") { proc.style.display="flex"; document.getElementById("proc-fill").style.width=pct+"%"; document.getElementById("proc-msg").textContent=msg; }
+  if (phase==="done")       { done.style.display="block"; document.getElementById("btn-voir-trajet").style.display="flex"; }
+  if (phase==="error")      { err.style.display="flex"; document.getElementById("error-msg").textContent=msg; }
+
+  // Pipeline steps
+  const steps = {ocr:["pipe-ocr"], geo:["pipe-ocr","pipe-geo"], routing:["pipe-ocr","pipe-geo","pipe-osrm"], done:["pipe-ocr","pipe-geo","pipe-osrm","pipe-time"]};
+  const active = steps[phase] || [];
+  ["pipe-ocr","pipe-geo","pipe-osrm","pipe-time"].forEach(id=>{
+    const el = document.getElementById(id);
+    el.style.opacity = active.includes(id) ? "1" : "0.38";
+    el.querySelector(".pipe-check").style.display = phase==="done" || (active.includes(id) && !["pipe-time"].includes(id)||phase==="done") ? "none" : "none";
+  });
+  if (phase==="done") {
+    ["pipe-ocr","pipe-geo","pipe-osrm","pipe-time"].forEach(id=>{
+      document.getElementById(id).style.opacity="1";
+      document.getElementById(id).querySelector(".pipe-check").style.display="inline";
+    });
+  }
+}
+
+function resetScan() { setScanPhase("idle"); document.getElementById("file-input").value=""; }
+
+async function handleFile(file) {
+  if (!file) return;
+  try {
+    document.getElementById("proc-icon").textContent = "📤";
+    setScanPhase("processing", 10, "Lecture du fichier...");
+    const b64 = await new Promise((res,rej)=>{
+      const r = new FileReader();
+      r.onload = ()=>res(r.result.split(",")[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const mime = file.type || "image/jpeg";
+
+    document.getElementById("proc-icon").textContent = "🤖";
+    setScanPhase("processing", 30, "Claude lit la feuille de route...");
+    let ocrData;
+    try { ocrData = await claudeOCR(b64, mime); }
+    catch(e) { setScanPhase("error", 0, e.message); return; }
+
+    if (!ocrData.stops || ocrData.stops.length===0) { setScanPhase("error", 0, ocrData.error||"Aucune adresse détectée."); return; }
+
+    document.getElementById("proc-icon").textContent = "📍";
+    setScanPhase("geo", 55, `Géolocalisation de ${ocrData.stops.length} adresses...`);
+    const geocoded = await Promise.all(ocrData.stops.map(async(s,i)=>{
+      const g = await geocode(s.addr);
+      return {...s, id:i+1, status:"pending", lat:g?.lat, lon:g?.lon, driveMins:8};
+    }));
+
+    const withCoords = geocoded.filter(s=>s.lat&&s.lon);
+    let ordered = geocoded; let km=null, driveMins=null;
+    if (withCoords.length>=2) {
+      document.getElementById("proc-icon").textContent = "🔁";
+      setScanPhase("routing", 80, "Optimisation OSRM · Routes Belgique...");
+      const pts = gps ? [{lat:gps.lat,lon:gps.lon,isDepot:true},...withCoords] : withCoords;
+      const res = await osrmOptimize(pts);
+      ordered = res.stops.filter(s=>!s.isDepot);
+      km=res.km; driveMins=res.min;
+    }
+
+    const withETA = calcETAs(ordered.map((s,i)=>({...s,id:i+1})));
+    const totalStop = withETA.reduce((a,s)=>a+getStopType(s).min,0);
+    stops = withETA;
+    routeStats = {km, min: driveMins ? Math.round(driveMins+totalStop) : null};
+
+    // Done preview
+    document.getElementById("done-count").textContent = `✅ ${stops.length} adresses extraites`;
+    const prev = document.getElementById("done-preview");
+    prev.innerHTML = stops.slice(0,3).map(s=>{
+      const t=getStopType(s);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:9px 16px;border-top:1px solid var(--sep)">
+        <span style="font-size:18px">${t.icon}</span>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">${s.name}</div><div style="font-size:11px;color:${t.color}">~${fmtMinShort(t.min)} sur place</div></div>
+        ${s.urgent?'<span class="pill pill-red">URGENT</span>':""}
+      </div>`;
+    }).join("")+(stops.length>3?`<div style="padding:8px 16px;font-size:12px;color:var(--t2);border-top:1px solid var(--sep)">+ ${stops.length-3} autres</div>`:"");
+
+    setScanPhase("done", 100, "");
+    showToast("✨","Trajet optimisé !",`${stops.length} arrêts${km?" · "+km+" km":""}`);
+  } catch(e) { setScanPhase("error", 0, "Erreur: "+(e.message||"Inconnue")); }
+}
+
+// ── MANUAL ADD ────────────────────────────────────────────
+async function addManual() {
+  const name = document.getElementById("manual-name").value.trim();
+  const addr = document.getElementById("manual-addr").value.trim();
+  if (!name||!addr) { showToast("⚠️","Champs manquants","Nom et adresse requis"); return; }
+  showToast("⏳","Géolocalisation...","Recherche de l'adresse en Belgique");
+  const g = await geocode(addr);
+  const newStop = {id:stops.length+1, name, addr, urgent:false, time:null, status:"pending", packages:"", driveMins:8, lat:g?.lat, lon:g?.lon};
+  stops = calcETAs([...stops, newStop]);
+  document.getElementById("manual-name").value="";
+  document.getElementById("manual-addr").value="";
+  showToast("✅","Arrêt ajouté",name+(g?"":" · non géolocalisé"));
+  renderHome();
+}
+
+// ── DEMO ─────────────────────────────────────────────────
+function loadDemo() {
+  const raw = [
+    {id:1,name:"Pharmacie De Smedt",addr:"Rue Neuve 10, 1000 Bruxelles",urgent:true,time:"09:00",status:"pending",packages:"3 colis",lat:50.8536,lon:4.3521,driveMins:12},
+    {id:2,name:"Boulangerie Desmet",addr:"Avenue Louise 123, 1050 Bruxelles",urgent:false,time:null,status:"pending",packages:"2 colis",lat:50.8288,lon:4.3650,driveMins:9},
+    {id:3,name:"Clinique Sainte-Anne",addr:"Chaussée de Waterloo 935, 1180 Uccle",urgent:true,time:"10:30",status:"pending",packages:"6 colis",lat:50.7989,lon:4.3486,driveMins:14},
+    {id:4,name:"Hôtel Amigo",addr:"Rue de l'Amigo 1, 1000 Bruxelles",urgent:false,time:null,status:"pending",packages:"4 colis",lat:50.8462,lon:4.3497,driveMins:11},
+    {id:5,name:"Colruyt Braine",addr:"Rue de la Station 5, 1420 Braine-l'Alleud",urgent:false,time:null,status:"pending",packages:"12 colis",lat:50.6838,lon:4.3725,driveMins:22},
+    {id:6,name:"École Saint-Michel",addr:"Bd Saint-Michel 24, 1040 Etterbeek",urgent:false,time:null,status:"pending",packages:"5 colis",lat:50.8377,lon:4.3861,driveMins:10},
+  ];
+  stops = calcETAs(raw);
+  const totalStop = stops.reduce((a,s)=>a+getStopType(s).min,0);
+  routeStats = {km:"48.3", min:Math.round(78+totalStop)};
+  showToast("🇧🇪","Démo Bruxelles chargée","6 arrêts · 48 km");
+  switchTab("home");
+}
+
+// ── RENDER HOME ───────────────────────────────────────────
+function renderHome() {
+  const hasStops = stops.length > 0;
+  document.getElementById("home-empty").style.display = hasStops?"none":"block";
+  document.getElementById("home-content").style.display = hasStops?"block":"none";
+  if (!hasStops) return;
+
+  const done = stops.filter(s=>s.status==="done").length;
+  const totalStop = stops.reduce((a,s)=>a+getStopType(s).min,0);
+
+  document.getElementById("hero-stops").textContent = stops.length;
+  document.getElementById("hero-km").textContent = routeStats.km ? routeStats.km+"km" : "—";
+  document.getElementById("hero-time").textContent = fmtMin(routeStats.min);
+  document.getElementById("hero-progress").style.width = `${(done/stops.length)*100}%`;
+  document.getElementById("hero-done").textContent = `${done}/${stops.length} livrés`;
+
+  // Next stop
+  const next = stops.find(s=>s.status!=="done");
+  const nc = document.getElementById("next-stop-card");
+  if (next) {
+    nc.style.display="block";
+    const t = getStopType(next);
+    document.getElementById("next-icon").textContent = t.icon;
+    document.getElementById("next-icon").style.background = t.color+"22";
+    document.getElementById("next-name").textContent = next.name;
+    document.getElementById("next-addr").textContent = next.addr;
+    document.getElementById("next-info").textContent = `~${fmtMinShort(t.min)} sur place${next.eta?" · arrivée ~"+next.eta:""}`;
+    document.getElementById("next-info").style.color = t.color;
+    document.getElementById("next-waze-btn").dataset.stopId = next.id;
+  } else { nc.style.display="none"; }
+
+  // Time breakdown
+  document.getElementById("time-breakdown").style.display="block";
+  document.getElementById("tb-drive").textContent = fmtMin(routeStats.min?routeStats.min-Math.round(totalStop):0);
+  const stdMins = stops.filter(s=>getStopType(s).id==="standard").length*1.5;
+  document.getElementById("tb-standard").textContent = fmtMin(stdMins);
+  const longMins = stops.filter(s=>["hospital","hotel","school"].includes(getStopType(s).id)).reduce((a,s)=>a+getStopType(s).min,0);
+  document.getElementById("tb-long").textContent = fmtMin(longMins);
+
+  // Urgents
+  const urgents = stops.filter(s=>s.urgent&&s.status!=="done");
+  const us = document.getElementById("urgents-section");
+  us.style.display = urgents.length>0?"block":"none";
+  if (urgents.length>0) {
+    document.getElementById("urgent-count").textContent = urgents.length+" créneau"+(urgents.length>1?"x":"");
+    document.getElementById("urgents-list").innerHTML = urgents.map(s=>`
+      <div class="stop-row" onclick="openDetail(${s.id})">
+        <div class="stop-dot" style="background:var(--red)">${s.id}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+          <div style="font-size:11px;color:var(--t2)">🕐 Avant ${s.time}</div>
+        </div>
+        <button onclick="event.stopPropagation();wazeStop(${s.id})" class="waze-btn sm">😊</button>
+      </div>`).join("");
+  }
+
+  // All stops
+  document.getElementById("stops-list").innerHTML = stops.map((s,i)=>{
+    const t=getStopType(s);
+    const dotBg = s.status==="done"?"var(--green)":s.urgent?"var(--red)":t.color;
+    const dotContent = s.status==="done"?"✓":t.icon;
+    const badge = s.status==="done"?'<span class="pill pill-green">✓</span>':s.urgent?`<span class="pill pill-red">${s.time}</span>`:"";
+    return `<div class="stop-row" style="border-bottom:${i<stops.length-1?"1px solid var(--sep)":"none"}">
+      <div style="flex:1;display:flex;align-items:center;gap:10px;min-width:0" onclick="openDetail(${s.id})">
+        <div class="stop-dot" style="background:${dotBg}">${dotContent}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+          <div style="font-size:10px;color:${t.color};margin-top:2px">${t.icon} ${t.label} · ~${fmtMinShort(t.min)}${s.eta?" · ~"+s.eta:""}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        ${badge}
+        <button onclick="wazeStop(${s.id})" style="width:34px;height:34px;border-radius:10px;background:rgba(5,200,240,0.12);border:1px solid rgba(5,200,240,0.25);cursor:pointer;font-size:16px">😊</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── RENDER ROUTE ──────────────────────────────────────────
+function renderRoute() {
+  const done = stops.filter(s=>s.status==="done").length;
+  document.getElementById("rt-stops").textContent = stops.length;
+  document.getElementById("rt-km").textContent = routeStats.km ? routeStats.km+"km" : "—";
+  document.getElementById("rt-time").textContent = fmtMin(routeStats.min);
+  document.getElementById("rt-done").textContent = `${done}/${stops.length}`;
+
+  const tl = document.getElementById("timeline");
+  let html = `<div style="display:flex;gap:12px">
+    <div style="display:flex;flex-direction:column;align-items:center;width:28px">
+      <div class="tl-dot" style="width:13px;height:13px;background:var(--purple)"></div>
+      <div class="tl-line"></div>
+    </div>
+    <div style="flex:1;padding-bottom:14px">
+      <div style="font-size:14px;font-weight:600;color:var(--purple)">🏠 Position de départ</div>
+      <div style="font-size:11px;color:var(--t2);margin-top:2px">${gps?gps.lat.toFixed(4)+", "+gps.lon.toFixed(4):"GPS en attente..."}</div>
+    </div>
+  </div>`;
+
+  stops.forEach((s,i)=>{
+    const t=getStopType(s);
+    const dotColor = s.status==="done"?"var(--green)":s.urgent?"var(--red)":t.color;
+    const nameColor = s.status==="done"?"var(--green)":"white";
+    const badge = s.urgent&&s.status!=="done"?`<span class="pill pill-red">${s.time||"URGENT"}</span>`:"";
+    const doneBadge = s.status==="done"?'<span class="pill pill-green">✓</span>':"";
+    html += `<div style="display:flex;gap:12px">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px">
+        <div class="tl-dot" style="width:11px;height:11px;background:${dotColor}"></div>
+        ${i<stops.length-1?'<div class="tl-line"></div>':""}
+      </div>
+      <div style="flex:1;padding-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap;cursor:pointer" onclick="openDetail(${s.id})">
+            <span style="font-size:14px;font-weight:600;color:${nameColor}">${i+1}. ${s.name}</span>
+            ${badge}${doneBadge}
+          </div>
+          <button onclick="wazeStop(${s.id})" style="width:32px;height:32px;border-radius:9px;background:rgba(5,200,240,0.15);border:1px solid rgba(5,200,240,0.3);cursor:pointer;font-size:15px;flex-shrink:0">😊</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
+          <span style="font-size:11px;color:${t.color}">${t.icon} ${t.label}</span>
+          <span style="font-size:11px;color:var(--t2)">· ~${fmtMinShort(t.min)} sur place</span>
+          ${s.eta?`<span style="font-size:11px;color:var(--t2)">· arrivée ~${s.eta}</span>`:""}
+        </div>
+        <div style="font-size:11px;color:var(--t2);margin-top:1px">${s.addr}</div>
+        ${s.lat?`<div style="font-size:10px;color:var(--blue);margin-top:1px">📍 ${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</div>`:""}
+      </div>
+    </div>`;
+  });
+
+  html += `<div style="display:flex;gap:12px;margin-bottom:24px">
+    <div style="width:28px;display:flex;justify-content:center">
+      <div class="tl-dot" style="width:13px;height:13px;background:var(--purple)"></div>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:600;color:var(--purple)">🏠 Retour dépôt · Boucle ✅</div>
+      <div style="font-size:11px;color:var(--t2);margin-top:2px">${routeStats.km?routeStats.km+" km total":"—"}</div>
+    </div>
+  </div>`;
+  tl.innerHTML = html;
+}
+
+// ── RENDER STATS ──────────────────────────────────────────
+function renderStats() {
+  const done = stops.filter(s=>s.status==="done").length;
+  const totalStop = stops.reduce((a,s)=>a+getStopType(s).min,0);
+  const usedTypes = STOP_TYPES.filter(t=>stops.some(s=>getStopType(s).id===t.id));
+  document.getElementById("stats-types").innerHTML = usedTypes.length===0
+    ? '<div style="padding:16px;color:var(--t2);font-size:14px;text-align:center">Aucun arrêt chargé</div>'
+    : '<div style="padding:12px 16px;font-size:14px;font-weight:600;color:var(--t2);border-bottom:1px solid var(--sep)">Temps sur place par type</div>'
+      + usedTypes.map((t,i,arr)=>{
+        const count=stops.filter(s=>getStopType(s).id===t.id).length;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:${i<arr.length-1?"1px solid var(--sep)":"none"}">
+          <span style="font-size:18px">${t.icon}</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${t.label}</div><div style="font-size:11px;color:var(--t2)">${count} arrêt${count>1?"s"} · ${fmtMinShort(t.min)} chacun</div></div>
+          <div style="font-size:13px;font-weight:700;color:${t.color}">${fmtMin(count*t.min)}</div>
+        </div>`;
+      }).join("");
+
+  document.getElementById("stats-general").innerHTML = [
+    ["🚚 Livrés",`${done}/${stops.length}`],
+    ["📍 Distance",routeStats.km?routeStats.km+" km":"—"],
+    ["🚗 Trajet",fmtMin(routeStats.min?routeStats.min-Math.round(totalStop):0)],
+    ["📦 Livraisons",fmtMin(totalStop)],
+    ["⏱ Total estimé",fmtMin(routeStats.min)],
+    ["⚡ Urgences",`${stops.filter(s=>s.urgent&&s.status==="done").length}/${stops.filter(s=>s.urgent).length}`],
+    ["📍 GPS",gps?`✓ ${gps.acc}m`:"Non"],
+    ["🤖 OCR",apiKey?"Claude Sonnet ✓":"Non configuré"],
+  ].map(([k,v],i,arr)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:${i<arr.length-1?"1px solid var(--sep)":"none"}">
+      <span style="font-size:14px;color:var(--t2)">${k}</span>
+      <span style="font-size:14px;font-weight:600">${v}</span>
+    </div>`).join("");
+}
+
+// ── DETAIL ────────────────────────────────────────────────
+function openDetail(id) {
+  selStop = stops.find(s=>s.id===id);
+  if (!selStop) return;
+  prevTab = currentTab;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen-detail").classList.add("active");
+  document.getElementById("tabbar").style.display="none";
+  currentTab="detail";
+
+  const t = getStopType(selStop);
+  document.getElementById("detail-title").textContent = `Arrêt #${selStop.id}`;
+  document.getElementById("detail-waze-btn").textContent = `😊 Naviguer → ${selStop.name}`;
+  document.getElementById("detail-coords").textContent = selStop.lat
+    ? `📍 ${selStop.lat.toFixed(5)}, ${selStop.lon.toFixed(5)}`
+    : "⚠️ Non géolocalisé — Waze cherchera par nom";
+
+  const tc = document.getElementById("detail-type-card");
+  tc.style.background = t.color+"18";
+  tc.style.border = `1px solid ${t.color}30`;
+  document.getElementById("detail-type-icon").textContent = t.icon;
+  document.getElementById("detail-type-name").textContent = t.label;
+  document.getElementById("detail-type-name").style.color = t.color;
+  document.getElementById("detail-type-info").textContent = `~${fmtMinShort(t.min)} sur place${selStop.eta?" · arrivée ~"+selStop.eta:""}`;
+
+  const infoRows = [
+    {icon:"📍",bg:"rgba(0,122,255,0.15)",label:"Adresse",val:selStop.addr},
+    ...(selStop.packages?[{icon:"📦",bg:"rgba(255,149,0,0.15)",label:"Colis",val:selStop.packages}]:[]),
+    ...(selStop.urgent&&selStop.time?[{icon:"⚡",bg:"rgba(255,59,48,0.15)",label:"Créneau",val:`Avant ${selStop.time}`,vc:"var(--red)"}]:[]),
+    ...(selStop.notes?[{icon:"💬",bg:"rgba(0,122,255,0.15)",label:"Instructions",val:selStop.notes}]:[]),
+  ];
+  document.getElementById("detail-info").innerHTML = infoRows.map((r,i,arr)=>`
+    <div class="info-row" style="border-bottom:${i<arr.length-1?"1px solid var(--sep)":"none"}">
+      <div class="info-icon" style="background:${r.bg}">${r.icon}</div>
+      <div style="flex:1"><div style="font-size:12px;color:var(--t2)">${r.label}</div><div style="font-size:14px;font-weight:500;margin-top:2px;color:${r.vc||"white"}">${r.val}</div></div>
+    </div>`).join("");
+
+  if (selStop.time) {
+    const [h,m]=selStop.time.split(":");
+    document.getElementById("time-h").value=h;
+    document.getElementById("time-m").value=m;
+  }
+  const btn=document.getElementById("btn-mark-done");
+  if (selStop.status==="done") {
+    btn.textContent="✅ Déjà livré";
+    btn.style.background="var(--bg4)";
+    btn.style.color="var(--t2)";
+    btn.style.boxShadow="none";
+  } else {
+    btn.textContent="✅ Marquer comme livré";
+    btn.style.background="var(--green)";
+    btn.style.color="#fff";
+    btn.style.boxShadow="0 6px 20px rgba(52,199,89,0.35)";
+  }
+}
+
+function closeDetail() {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen-"+prevTab).classList.add("active");
+  document.getElementById("tabbar").style.display="flex";
+  currentTab=prevTab;
+  if (prevTab==="home") renderHome();
+  if (prevTab==="route") renderRoute();
+}
+
+function markDone() {
+  if (!selStop || selStop.status==="done") return;
+  stops = stops.map(s=>s.id===selStop.id?{...s,status:"done"}:s);
+  const idx = stops.findIndex(s=>s.id===selStop.id);
+  const next = stops.slice(idx+1).find(s=>s.status!=="done") || stops.find(s=>s.status!=="done");
+
+  closeDetail();
+
+  if (next) {
+    // Show next stop modal
+    const t = getStopType(next);
+    document.getElementById("nm-name").textContent = next.name;
+    document.getElementById("nm-name").dataset.stopId = next.id;
+    document.getElementById("nm-addr").textContent = next.addr;
+    document.getElementById("nm-icon").textContent = t.icon;
+    document.getElementById("nm-icon").style.background = t.color+"22";
+    document.getElementById("nm-type").textContent = t.label;
+    document.getElementById("nm-type").style.color = t.color;
+    document.getElementById("nm-dur").textContent = `~${fmtMinShort(t.min)}`;
+    document.getElementById("nm-eta").textContent = next.eta || "—";
+    document.getElementById("next-modal").style.display="flex";
+  } else {
+    showToast("🎉","Tournée terminée !","Tous les colis sont livrés !");
+  }
+  renderHome();
+}
+
+function closeNextModal() {
+  document.getElementById("next-modal").style.display="none";
+}
+
+function setUrgent() {
+  if (!selStop) return;
+  const h=document.getElementById("time-h").value;
+  const m=document.getElementById("time-m").value;
+  stops=stops.map(s=>s.id===selStop.id?{...s,urgent:true,time:`${h}:${m}`}:s);
+  selStop={...selStop,urgent:true,time:`${h}:${m}`};
+  showToast("⚡","Urgent",`${selStop.name} · avant ${h}:${m}`);
+  openDetail(selStop.id);
+}
+function clearUrgent() {
+  if (!selStop) return;
+  stops=stops.map(s=>s.id===selStop.id?{...s,urgent:false,time:null}:s);
+  selStop={...selStop,urgent:false,time:null};
+  showToast("✅","Urgence supprimée",selStop.name);
+  openDetail(selStop.id);
+}
+
+// ── TYPE PICKER ───────────────────────────────────────────
+function buildTypeList() {
+  document.getElementById("type-list").innerHTML = STOP_TYPES.map(t=>`
+    <div onclick="selectType('${t.id}')" style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-top:1px solid var(--sep);cursor:pointer">
+      <div style="width:40px;height:40px;border-radius:12px;background:${t.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${t.icon}</div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:600">${t.label}</div><div style="font-size:12px;color:var(--t2);margin-top:2px">~${fmtMinShort(t.min)} sur place</div></div>
+    </div>`).join("");
+}
+function showTypePicker() { document.getElementById("type-modal").style.display="flex"; }
+function closeTypePicker() { document.getElementById("type-modal").style.display="none"; }
+function selectType(typeId) {
+  if (!selStop) return;
+  stops=stops.map(s=>s.id===selStop.id?{...s,stopTypeId:typeId}:s);
+  selStop={...selStop,stopTypeId:typeId};
+  closeTypePicker();
+  const t=STOP_TYPES.find(x=>x.id===typeId);
+  showToast(t.icon,"Type mis à jour",`${fmtMinShort(t.min)} sur place`);
+  openDetail(selStop.id);
+}
+
+// ── WAZE HELPERS ──────────────────────────────────────────
+function wazeStop(id) {
+  const s=stops.find(x=>x.id===id);
+  openWaze(s);
+}
+</script>
+</body>
+</html>
